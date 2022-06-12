@@ -1,3 +1,5 @@
+Description: Michael Uzoigwe (mike-pj) / Udacity Nanodegree
+             This template Creates two resources using CloudFormation Script
 Parameters:
   myVPC:
       Description: VPC used to deploy our resources below
