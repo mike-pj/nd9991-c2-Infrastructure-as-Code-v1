@@ -16,12 +16,12 @@ Parameters:
         Type: String
         Default: 10.0.0.0/16
 
-    PublicSubnet1CIDR:
+    PublicSubnetCIDR:
         Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
         Type: String
         Default: 10.0.1.0/24
 
-    PrivateSubnet1CIDR:
+    PrivateSubnetCIDR:
         Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
         Type: String
         Default: 10.0.2.0/24
@@ -55,7 +55,7 @@ Resources:
         Properties:
             VpcId: !Ref VPC
             AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !Ref PublicSubnet1CIDR
+            CidrBlock: !Ref PublicSubnetCIDR
             MapPublicIpOnLaunch: false
             Tags: 
                 - Key: Name 
@@ -66,7 +66,7 @@ Resources:
         Properties:
             VpcId: !Ref VPC
             AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !Ref PrivateSubnet1CIDR
+            CidrBlock: !Ref PrivateSubnetCIDR
             MapPublicIpOnLaunch: true
             Tags: 
                 - Key: Name 
