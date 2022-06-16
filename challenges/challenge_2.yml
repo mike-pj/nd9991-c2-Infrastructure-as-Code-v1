@@ -1,9 +1,6 @@
+AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-    Michael Uzoigwe (mike-pj) / Udacity NAN
-    This template deploys a VPC, with a public and private subnet in an Availabilty Zone. 
-    It deploys an Internet Gateway, with a default 
-    route on the public subnet. It deploys a NAT Gateway (in the AZ), 
-    and default routes for them in the private subnet.
+    Creates the required network infrastructure
 
 Parameters:
 
@@ -16,19 +13,19 @@ Parameters:
         Type: String
         Default: 10.0.0.0/16
 
-    PublicSubnetCIDR:
+    PublicSubnet1CIDR:
         Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
         Type: String
         Default: 10.0.1.0/24
 
-    PrivateSubnetCIDR:
+    PrivateSubnet1CIDR:
         Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
         Type: String
         Default: 10.0.2.0/24
 
 Resources:
 
-    VPC: 
+    MainVPC: 
         Type: AWS::EC2::VPC
         Properties:
             CidrBlock: !Ref VpcCIDR
@@ -37,95 +34,102 @@ Resources:
                 - Key: Name 
                   Value: !Ref EnvironmentName
 
-    InternetGateway:
+    InternetGW:
         Type: AWS::EC2::InternetGateway
         Properties:
             Tags:
                 - Key: Name
                   Value: !Ref EnvironmentName
             
-    InternetGatewayAttachment:
+    AttachInternetGateway:
         Type: AWS::EC2::VPCGatewayAttachment
         Properties:
-            InternetGatewayId: !Ref InternetGateway
-            VpcId: !Ref VPC
+            InternetGatewayId: !Ref InternetGW
+            VpcId: !Ref MainVPC
 
-    PublicSubnet: 
+    PublicSubnet1: 
         Type: AWS::EC2::Subnet
         Properties:
-            VpcId: !Ref VPC
+            VpcId: !Ref MainVPC
             AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !Ref PublicSubnetCIDR
+            CidrBlock: !Ref PublicSubnet1CIDR
             MapPublicIpOnLaunch: false
             Tags: 
                 - Key: Name 
                   Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
 
-    PrivateSubnet: 
+    PrivateSubnet1: 
         Type: AWS::EC2::Subnet
         Properties:
-            VpcId: !Ref VPC
+            VpcId: !Ref MainVPC
             AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !Ref PrivateSubnetCIDR
+            CidrBlock: !Ref PrivateSubnet1CIDR
             MapPublicIpOnLaunch: true
             Tags: 
                 - Key: Name 
                   Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
 
-    NatGatewayEIP:
-        Type: AWS::EC2::EIP
-        DependsOn: InternetGatewayAttachment
-        Properties: 
-            Domain: vpc
-
-    NatGateway: 
+    NAT: 
         Type: AWS::EC2::NatGateway
         Properties: 
-            AllocationId: !GetAtt NatGatewayEIP.AllocationId
-            SubnetId: !Ref PublicSubnet
+            AllocationId: !GetAtt EIP.AllocationId
+            SubnetId: !Ref PublicSubnet1
 
-    PublicRouteTable:
-        Type: AWS::EC2::RouteTable
-        Properties: 
-            VpcId: !Ref VPC
-            Tags: 
-                - Key: Name 
-                  Value: !Sub ${EnvironmentName} Public Routes
-
-    DefaultPublicRoute: 
-        Type: AWS::EC2::Route
-        DependsOn: InternetGatewayAttachment
-        Properties: 
-            RouteTableId: !Ref PublicRouteTable
-            DestinationCidrBlock: 0.0.0.0/0
-            GatewayId: !Ref InternetGateway
-
-    PublicSubnetRouteTableAssociation:
-        Type: AWS::EC2::SubnetRouteTableAssociation
+    EIP:
+        Type: AWS::EC2::EIP
         Properties:
-            RouteTableId: !Ref PublicRouteTable
-            SubnetId: !Ref PublicSubnet
+            Tags:
+            - Key: Name
+              Value: "Elastic IP for our NAT Gateway"
 
     PrivateRouteTable:
         Type: AWS::EC2::RouteTable
         Properties: 
-            VpcId: !Ref VPC
+            VpcId: !Ref MainVPC
             Tags: 
-                - Key: Name 
-                  Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+            - Key: Name 
+              Value: !Sub ${EnvironmentName} Private Routes (AZ1)
 
-    DefaultPrivateRoute:
-        Type: AWS::EC2::Route
-        Properties:
-            RouteTableId: !Ref PrivateRouteTable
-            DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref NatGateway
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref MainVPC
+            Tags: 
+            - Key: Name 
+              Value: !Sub ${EnvironmentName} Public Routes
 
-    PrivateSubnetRouteTableAssociation:
-        Type: AWS::EC2::SubnetRouteTableAssociation
-        Properties:
-            RouteTableId: !Ref PrivateRouteTable
-            SubnetId: !Ref PrivateSubnet
+    # AssociatePUBRT:
+    #     Type: AWS::EC2::SubnetRouteTableAssociation
+    #     Properties:
+    #         RouteTableId: !Ref PublicRouteTable
+    #         SubnetId: !Ref PublicSubnet1
+
+    # AssociatePRIVRT:
+    #     Type: AWS::EC2::SubnetRouteTableAssociation
+    #     Properties:
+    #         RouteTableId: !Ref PrivateRouteTable
+    #         SubnetId: !Ref PrivateSubnet1
+
+    # PublicInternetRoute: 
+    #     Type: AWS::EC2::Route
+    #     DependsOn: InternetGatewayAttachment
+    #     Properties: 
+    #         RouteTableId: !Ref PublicRouteTable
+    #         DestinationCidrBlock: 0.0.0.0/0
+    #         GatewayId: !Ref InternetGW
+
+    # PrivateInternetOutboundRoute:
+    #     Type: AWS::EC2::Route
+    #     Properties:
+    #         RouteTableId: !Ref PrivateRouteTable
+    #         DestinationCidrBlock: 0.0.0.0/0
+    #         NatGatewayId: !Ref NAT
+
+    # PrivateSubnetRouteTableAssociation:
+    #     Type: AWS::EC2::SubnetRouteTableAssociation
+    #     Properties:
+    #         RouteTableId: !Ref PrivateRouteTable
+    #         SubnetId: !Ref PrivateSubnet
 
     
 
