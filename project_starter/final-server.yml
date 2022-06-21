@@ -1,5 +1,5 @@
 Description: >
-    Carlos Rivas / Udacity 2019
+    Michael Uzoigwe / Udacity NAN 2019
 
 Parameters:
 
@@ -59,7 +59,7 @@ Resources:
       # ToDo: AMI ID of Ubuntu Linux machine. Too get one, try creating a VM from the web console. 
       ImageId: ami-00ddb0e5626798373
       # ToDo: Change the key-pair name, as applicable to you. 
-      KeyName: Vocareumkey2
+      
       SecurityGroups:
       - Ref: WebServerSecGroup
       InstanceType: t3.medium
